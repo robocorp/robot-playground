@@ -1,0 +1,46 @@
+{
+  "form": [
+    { "type": "title", "value": "Give some additional information" },
+    { "type": "text", "value": "What is your gender" },
+    {
+      "type": "input",
+      "subtype": "radio",
+      "id": "question",
+      "options": ["male", "female"],
+      "default": "male"
+    },
+    {
+      "type": "input",
+      "subtype": "text",
+      "label": "First name ?",
+      "name": "fname"
+    },
+    {
+      "type": "input",
+      "subtype": "text",
+      "label": "Last name ?",
+      "name": "lname"
+    },
+    {
+      "type": "input",
+      "label": "select your weapons",
+      "subtype": "checkbox",
+      "id": "checking",
+      "options": ["guns", "swords", "shields"]
+    },
+    {
+      "type": "textarea",
+      "name": "freeword",
+      "default": "free word",
+      "rows": 5,
+      "cols": 40
+    },
+    {
+      "type": "dropdown",
+      "label": "Select job",
+      "id": "job",
+      "options": ["engineer", "nurse", "teacher"],
+      "default": "teacher"
+    }
+  ]
+}
