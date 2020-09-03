@@ -10,7 +10,6 @@ import time
 
 from urllib.parse import urlparse
 
-from pathlib import Path
 from RPA.Browser import Browser
 from collections import OrderedDict
 
@@ -76,7 +75,6 @@ class Handler(BaseHTTPRequestHandler):
         formhtml += "<input type='submit' value='Submit'></form>"
         with open("form.html", "w") as f:
             f.write(formhtml)
-        # return {"url": "http://localhost:8105/form.html"}
 
     def do_HEAD(self):
         self.send_response(200)
@@ -102,7 +100,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path.endswith("favicon.ico"):
             return
-        elif "formresponsehandling" in self.path:
+        elif self.path.endswith(".html"):
             query = urlparse(self.path).query
             query_components = dict(qc.split("=") for qc in query.split("&"))
             self._set_headers()
@@ -111,7 +109,6 @@ class Handler(BaseHTTPRequestHandler):
         root = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "attended"
         )
-        # print(self.path)
         if self.path == "/":
             filename = root + "/index.html"
         else:
@@ -120,21 +117,7 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         with open(filename, "rb") as fh:
             html = fh.read()
-            # html = bytes(html, 'utf8')
             self.wfile.write(html)
-        # self.wfile.write(self.getContent(self.getPath()))
-
-    def getPath(self):
-        if self.path == "/":
-            content_path = Path.cwd() / Path("index.html")
-        else:
-            content_path = Path.cwd() / Path(self.path)
-        return content_path
-
-    def getContent(self, content_path):
-        with open(content_path, mode="r", encoding="utf-8") as f:
-            content = f.read()
-        return bytes(content, "utf-8")
 
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
@@ -157,17 +140,12 @@ class Attended:
         self.daemon.setDaemon(True)
         self.daemon.start()
 
-    def __del__(self):
-        LOGGER.info("Dialogs __del__")
-
     def request_response(self, formspec):
         LOGGER.info("Received: %s", formspec)
         self.start_server()
         headers = {"Accept": "application/json", "Content-Type": "application/json"}
         requests.post(self.attended_server, data=open(formspec, "rb"), headers=headers)
-        # json_response = response.json()
         br = Browser()
-        # br.open_available_browser(json_response["url"])
         br.open_available_browser(f"{self.attended_server}/form.html")
         br.set_window_position(200, 200)
         br.set_window_size(600, 800)
@@ -175,26 +153,9 @@ class Attended:
         while True:
             location = br.get_location()
             if "formresponsehandling" in location:
-                # content = br.get_source()
                 break
             time.sleep(1)
 
-        # headers = {"If-None-Match": "xyz", "Prefer": "wait=120"}
-        # response_json = None
-        # while True:
-        #     response = requests.get(
-        #         f"{self.attended_server}/requestresponse", headers=headers
-        #     )
-        #     # etag = response.headers.get("ETag")
-        #     if response.status_code == 200:
-        #         response_json = response.json()
-        #     LOGGER.info(response)
-        #     time.sleep(1)
-
         br.close_all_browsers()
-        # http://localhost:8105/formresponsehandling?fname=John&lname=Doe
         location = location.replace("http://localhost:8105/formresponsehandling?", "")
-        LOGGER.info("parsing: %s", location)
-        # return response_json
         return dict(qc.split("=") for qc in location.split("&"))
-        # return content
