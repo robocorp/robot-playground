@@ -1,9 +1,8 @@
 *** Settings ***
 Documentation  Sends message to Slack channel
-...  %PATH
-...  %MESSAGE
-...  %SECRET .WEBHOOK
-...  %CHANNEL
+...  %SLACK_PATH or %SLACK_MESSAGE defines the message or work item key that holds the message 
+...  %SLACK_SECRET name of the secret that holds the Slack's WEBHOOK -key
+...  %SLACK_CHANNEL name of Slack channel
 Library  OperatingSystem
 Library  RPA.Robocloud.Secrets
 Library  RPA.Robocloud.Items
