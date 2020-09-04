@@ -2,12 +2,12 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
 import threading
 import os
-import cgi
 import json
 import logging
 import requests
 import time
 
+from json import JSONDecodeError
 from urllib.parse import urlparse
 
 from RPA.Browser import Browser
@@ -18,41 +18,46 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Handler(BaseHTTPRequestHandler):
+    def log_message(self, format, *args):
+        pass
+
+    def log_request(self, code):
+        pass
+
     def _set_headers(self, headertype="json"):
         self.send_response(200)
         if headertype == "json":
             self.send_header("Content-type", "application/json")
-        else:
+        elif headertype == "html":
             self.send_header("Content-type", "text/html")
         self.end_headers()
 
     def create_form(self, message):
+        has_submit = False
         formhtml = "<form action='formresponsehandling'>"
         for item in message["form"]:
-            if item["type"] == "input":
-                if item["subtype"] == "text":
-                    formhtml += (
-                        f"<label for=\"{item['name']}\">{item['label']}</label><br>"
-                        f"<input type=\"{item['subtype']}\" name=\"{item['name']}\"><br>"
-                    )
-                elif item["subtype"] == "radio":
-                    if "label" in item:
-                        formhtml += f"<p>{item['label']}</p>"
-                    for option in item["options"]:
-                        checkedvalue = ""
-                        if "default" in item and item["default"] == option:
-                            checkedvalue = " checked"
-                        formhtml += f"""<input type=\"radio\" id=\"{option}\" name=\"{item['id']}\" value="{option}"{checkedvalue}>
+            if item["type"] == "textinput":
+                formhtml += (
+                    f"<label for=\"{item['name']}\">{item['label']}</label><br>"
+                    f"<input type=\"text\" name=\"{item['name']}\"><br>"
+                )
+            elif item["type"] == "radiobutton":
+                if "label" in item:
+                    formhtml += f"<p>{item['label']}</p>"
+                for option in item["options"]:
+                    checkedvalue = ""
+                    if "default" in item and item["default"] == option:
+                        checkedvalue = " checked"
+                    formhtml += f"""<input type=\"radio\" id=\"{option}\" name=\"{item['id']}\" value="{option}"{checkedvalue}>
                                         <label for=\"{option}\">{option}</label><br>"""
-                elif item["subtype"] == "checkbox":
-                    if "label" in item:
-                        formhtml += f"<p>{item['label']}</p>"
-                    idx = 1
-                    for option in item["options"]:
-                        formhtml += f"""<input type=\"checkbox\" id=\"{item['id']}{idx}\" name=\"{item['id']}{idx}\" value="{option}">
+            elif item["type"] == "checkbox":
+                if "label" in item:
+                    formhtml += f"<p>{item['label']}</p>"
+                idx = 1
+                for option in item["options"]:
+                    formhtml += f"""<input type=\"checkbox\" id=\"{item['id']}{idx}\" name=\"{item['id']}{idx}\" value="{option}">
                                         <label for=\"{item['id']}{idx}\">{option}</label><br>"""
-                        idx += 1
-
+                    idx += 1
             elif item["type"] == "title":
                 formhtml += f"<h3>{item['value']}</h3>"
             elif item["type"] == "text":
@@ -71,8 +76,14 @@ class Handler(BaseHTTPRequestHandler):
                         selected = " selected"
                     formhtml += f'<option name="{option}"{selected}>{option}</option>'
                 formhtml += "</select><br>"
-
-        formhtml += "<input type='submit' value='Submit'></form>"
+            elif item["type"] == "submit":
+                for button in item["buttons"]:
+                    formhtml += f"<input type=\"submit\" name=\"{item['name']}\" value=\"{button}\">"
+                formhtml += "<br>"
+                has_submit = True
+        if not has_submit:
+            formhtml += "<input type='submit' value='Submit'>"
+        formhtml += "</form>"
         with open("form.html", "w") as f:
             f.write(formhtml)
 
@@ -82,42 +93,59 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_POST(self):
-        ctype, pdict = cgi.parse_header(self.headers.get("content-type"))
-
-        # refuse to receive non-json content
-        if ctype != "application/json":
-            self.send_response(400)
+        if "formspec" in self.path:
+            # read the message and convert it into a python dictionary
+            length = int(self.headers.get("content-length"))
+            message = json.loads(self.rfile.read(length), object_pairs_hook=OrderedDict)
+            self.create_form(message)
+            self._set_headers()
+            return
+        else:
+            self.send_response(404)
             self.end_headers()
             return
-        # read the message and convert it into a python dictionary
-        length = int(self.headers.get("content-length"))
-        message = json.loads(self.rfile.read(length), object_pairs_hook=OrderedDict)
-        self.create_form(message)
-
-        self._set_headers()
-        return
 
     def do_GET(self):
         if self.path.endswith("favicon.ico"):
             return
-        elif self.path.endswith(".html"):
+        if "formresponsehandling" in self.path:
             query = urlparse(self.path).query
-            query_components = dict(qc.split("=") for qc in query.split("&"))
-            self._set_headers()
-            self.wfile.write(json.dumps(query_components).encode(encoding="utf-8"))
+            self.server.formresponse = (
+                dict(qc.split("=") for qc in query.split("&")) if query else None
+            )
+            self._set_headers("html")
             return
-        root = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "attended"
-        )
-        if self.path == "/":
-            filename = root + "/index.html"
+        elif self.path.endswith("requestresponse"):
+            if self.server.formresponse:
+                self._set_headers("json")
+                self.wfile.write(
+                    json.dumps(self.server.formresponse).encode(encoding="utf-8")
+                )
+                self.server.formresponse = None
+                return
+            else:
+                self.send_response(304)
+                self.end_headers()
+                return
+        elif self.path.endswith(".html"):
+            root = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "attended"
+            )
+            # print(self.path)
+            if self.path == "/":
+                filename = root + "/index.html"
+            else:
+                filename = root + self.path
+            self._set_headers("html")
+            with open(filename, "rb") as fh:
+                html = fh.read()
+                # html = bytes(html, 'utf8')
+                self.wfile.write(html)
+            return
         else:
-            filename = root + self.path
-        self._set_headers("html")
-        self.end_headers()
-        with open(filename, "rb") as fh:
-            html = fh.read()
-            self.wfile.write(html)
+            self.send_response(404)
+            self.end_headers()
+            return
 
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
@@ -125,37 +153,92 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
 
 
 def start_server(directory, port=8000):
-    LOGGER.info("starting server atport=%s" % port)
+    LOGGER.info("starting server at port=%s" % port)
     server = HTTPServer(("", port), Handler)
+    server.formresponse = None
     server.serve_forever()
 
 
 class Attended:
     attended_server = "http://localhost:8105"
+    server = None
 
     def start_server(self):
-        self.daemon = threading.Thread(
-            name="daemon_server", target=start_server, args=(".", 8105)
-        )
-        self.daemon.setDaemon(True)
-        self.daemon.start()
+        if self.server is None:
+            self.server = threading.Thread(
+                name="daemon_server", target=start_server, args=(".", 8105)
+            )
+            self.server.setDaemon(True)
+            self.server.start()
 
-    def request_response(self, formspec):
-        LOGGER.info("Received: %s", formspec)
+    def create_form(self, title: str = None):
+        self.custom_form = OrderedDict()
+        self.custom_form["form"] = list()
+        if title:
+            self.add_title(title)
+
+    def add_title(self, title):
+        element = {"type": "title", "value": title}
+        self.custom_form["form"].append(element)
+
+    def add_text_input(self, label, name):
+        element = {"type": "textinput", "label": label, "name": name}
+        self.custom_form["form"].append(element)
+
+    def add_dropdown(self, label, id, options, default=None):
+        if not isinstance(options, list):
+            options = options.split(",")
+        element = {"type": "dropdown", "label": label, "id": id, "options": options}
+        if default:
+            element["default"] = default
+        self.custom_form["form"].append(element)
+
+    def add_submit(self, name, buttons):
+        if not isinstance(buttons, list):
+            buttons = buttons.split(",")
+        element = {"type": "submit", "name": name, "buttons": buttons}
+        self.custom_form["form"].append(element)
+
+    def request_response(self, formspec=None):
         self.start_server()
+        if formspec:
+            formdata = open(formspec, "rb")
+        else:
+            formdata = json.dumps(self.custom_form)
         headers = {"Accept": "application/json", "Content-Type": "application/json"}
-        requests.post(self.attended_server, data=open(formspec, "rb"), headers=headers)
+        requests.post(
+            f"{self.attended_server}/formspec",
+            data=formdata,
+            headers=headers,
+        )
         br = Browser()
         br.open_available_browser(f"{self.attended_server}/form.html")
         br.set_window_position(200, 200)
         br.set_window_size(600, 800)
-        location = None
+
+        # headers = {"Prefer": "wait=120"}
+        headers = {"Prefer": "wait=120"}
+        response_json = None
+        # etag = None
         while True:
-            location = br.get_location()
-            if "formresponsehandling" in location:
-                break
+            # if etag:
+            #    headers['If-None-Match'] = etag
+            headers["If-None-Match"] = "2434432243"
+            response = requests.get(
+                f"{self.attended_server}/requestresponse", headers=headers
+            )
+            # etag = response.headers.get("ETag")
+            if response.status_code == 200:
+                try:
+                    response_json = response.json()
+                    break
+                except JSONDecodeError:
+                    pass
+            elif response.status_code != 304:
+                # back off if the server is throwing errors
+                time.sleep(60)
+                continue
             time.sleep(1)
 
         br.close_all_browsers()
-        location = location.replace("http://localhost:8105/formresponsehandling?", "")
-        return dict(qc.split("=") for qc in location.split("&"))
+        return response_json

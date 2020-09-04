@@ -3,28 +3,24 @@
     { "type": "title", "value": "Give some additional information" },
     { "type": "text", "value": "What is your gender" },
     {
-      "type": "input",
-      "subtype": "radio",
+      "type": "radiobutton",
       "id": "question",
       "options": ["male", "female"],
       "default": "male"
     },
     {
-      "type": "input",
-      "subtype": "text",
+      "type": "textinput",
       "label": "First name ?",
       "name": "fname"
     },
     {
-      "type": "input",
-      "subtype": "text",
+      "type": "textinput",
       "label": "Last name ?",
       "name": "lname"
     },
     {
-      "type": "input",
+      "type": "checkbox",
       "label": "select your weapons",
-      "subtype": "checkbox",
       "id": "checking",
       "options": ["guns", "swords", "shields"]
     },
