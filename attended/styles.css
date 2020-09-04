@@ -104,6 +104,7 @@ input[type="submit"] {
   background: rgb(120, 80, 250);
   margin-bottom: 0;
   border: none;
+  margin-right: 20px;
 }
 input[type="submit"]:hover {
   background: linear-gradient(rgb(120, 80, 250) 0%, rgb(98, 65, 204) 100%);
