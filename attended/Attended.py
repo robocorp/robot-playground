@@ -152,7 +152,7 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle requests in a separate thread."""
 
 
-def start_server(directory, port=8000):
+def start_server_cmd(directory, port=8000):
     LOGGER.info("starting server at port=%s" % port)
     server = HTTPServer(("", port), Handler)
     server.formresponse = None
@@ -160,13 +160,14 @@ def start_server(directory, port=8000):
 
 
 class Attended:
-    attended_server = "http://localhost:8105"
+    attended_server = None
     server = None
 
-    def start_server(self):
+    def start_server(self, port=8105):
         if self.server is None:
+            self.attended_server = f"http://localhost:{port}"
             self.server = threading.Thread(
-                name="daemon_server", target=start_server, args=(".", 8105)
+                name="daemon_server", target=start_server_cmd, args=(".", port)
             )
             self.server.setDaemon(True)
             self.server.start()
