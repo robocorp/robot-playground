@@ -10,7 +10,8 @@ import time
 from json import JSONDecodeError
 from urllib.parse import urlparse
 
-from RPA.Browser import Browser
+# from RPA.Browser import Browser
+import Browser
 from collections import OrderedDict
 
 
@@ -32,9 +33,17 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Content-type", "text/html")
         self.end_headers()
 
+    def import_styles(self):
+        inline_styles = "<head><style>"
+        with open("styles.css", "r") as styles:
+            inline_styles += styles.read()
+        inline_styles += "</style></head>"
+        return inline_styles
+
     def create_form(self, message):
         has_submit = False
-        formhtml = "<form action='formresponsehandling'>"
+        formhtml = self.import_styles()
+        formhtml += '<form action="formresponsehandling">'
         for item in message["form"]:
             if item["type"] == "textinput":
                 formhtml += (
@@ -83,7 +92,7 @@ class Handler(BaseHTTPRequestHandler):
                 has_submit = True
         if not has_submit:
             formhtml += "<input type='submit' value='Submit'>"
-        formhtml += "</form>"
+        formhtml += "</form></body>"
         with open("form.html", "w") as f:
             f.write(formhtml)
 
@@ -212,10 +221,11 @@ class Attended:
             data=formdata,
             headers=headers,
         )
-        br = Browser()
-        br.open_available_browser(f"{self.attended_server}/form.html")
-        br.set_window_position(200, 200)
-        br.set_window_size(600, 800)
+        br = Browser.Browser()
+        br.new_context(viewport={800, 1200}, colorScheme="dark")
+        br.open_browser(f"{self.attended_server}/form.html")
+        br.set_viewport_size(800, 1200)
+        # br.set_window_size(600, 800)
 
         # headers = {"Prefer": "wait=120"}
         headers = {"Prefer": "wait=120"}
@@ -241,5 +251,5 @@ class Attended:
                 continue
             time.sleep(1)
 
-        br.close_all_browsers()
+        br.close_browser()
         return response_json

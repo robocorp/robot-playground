@@ -20,7 +20,7 @@
     },
     {
       "type": "checkbox",
-      "label": "select your weapons",
+      "label": "Select your weapons",
       "id": "checking",
       "options": ["guns", "swords", "shields"]
     },
