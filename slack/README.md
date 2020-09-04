@@ -1,4 +1,6 @@
-Reusable Robot that can send notifications to Slack channels.
+# Slack Notifier
+
+Reusable Robot that can send notifications to Slack channel
 
 Environment variables:
 
