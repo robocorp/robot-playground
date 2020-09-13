@@ -3,6 +3,6 @@ Library   desktop.py
 
 *** Tasks ***
 Open Ubuntu menu
-  Click Image   linuxmenu2.png
+  Click Image   ubuntumenu.png
   Sleep   5s
   Press Key     esc
