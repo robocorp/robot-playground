@@ -11,7 +11,7 @@ def click_image(
     :param imagefile: click on the center of this image (filepath)
     :param button: which button to click, defaults to "left"
     :param clicks: how many times mouse is clicked, defaults to 1
-    :param interval: [description], defaults to 0.25
+    :param interval: time interval between clicks if more than 1 clicks, defaults to 0.25
     """
     os.environ["DISPLAY"] = ":99.0"
     match = Images().find_template_on_screen(imagefile, limit=1)
