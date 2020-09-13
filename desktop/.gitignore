@@ -1,0 +1,23 @@
+# Byte-compiled files
+__pycache__/
+*.py[cod]
+
+# Virtualenv
+*venv/
+
+# VS Code
+.vscode/
+
+# MacOS
+.DS_Store
+
+# Jupyter
+*.ipynb_checkpoints
+
+# LibreOffice
+**/.~lock*
+
+form.html
+log.html
+report.html
+output.xml
