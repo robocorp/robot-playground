@@ -10,8 +10,7 @@ import time
 from json import JSONDecodeError
 from urllib.parse import urlparse
 
-# from RPA.Browser import Browser
-import Browser
+from RPA.Browser import Browser
 from collections import OrderedDict
 
 
@@ -221,13 +220,10 @@ class Attended:
             data=formdata,
             headers=headers,
         )
-        br = Browser.Browser()
-        br.new_context(viewport={800, 1200}, colorScheme="dark")
+        br = Browser()
         br.open_browser(f"{self.attended_server}/form.html")
-        br.set_viewport_size(800, 1200)
-        # br.set_window_size(600, 800)
+        br.set_window_size(600, 800)
 
-        # headers = {"Prefer": "wait=120"}
         headers = {"Prefer": "wait=120"}
         response_json = None
         # etag = None
