@@ -21,3 +21,5 @@ form.html
 log.html
 report.html
 output.xml
+
+*.log
