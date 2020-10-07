@@ -8,7 +8,7 @@ Disclaimer. Documentation and testing for the solutions is not guaranteed.
 
 ---
 
-Hub   : https://hub.robocorp.com
+Documentation : https://robocorp.com/docs/
 
 Slack : robocorp-developers.slack.com
 
