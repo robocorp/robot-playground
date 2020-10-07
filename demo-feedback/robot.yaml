@@ -1,0 +1,53 @@
+tasks:
+  Handle Feedback From Excel:
+    command:
+      - python
+      - -m
+      - robot
+      - --report
+      - NONE
+      - --outputdir
+      - output
+      - --logtitle
+      - Task log
+      - --task
+      - Process Feedback From Excel
+      - tasks.robot
+
+  Analyze Feedback:
+    command:
+      - python
+      - -m
+      - robot
+      - --report
+      - NONE
+      - --outputdir
+      - output
+      - --logtitle
+      - Task log
+      - --task
+      - Analyze Feedback
+      - tasks.robot
+
+  Process Analyzed Feedbacks:
+    command:
+      - python
+      - -m
+      - robot
+      - --report
+      - NONE
+      - --outputdir
+      - output
+      - --logtitle
+      - Task log
+      - --task
+      - Process analyzed feedbacks
+      - tasks.robot
+condaConfigFile: conda.yaml
+ignoreFiles:
+  - .gitignore
+artifactsDir: output
+PATH:
+  - .
+PYTHONPATH:
+  - .
