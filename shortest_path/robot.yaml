@@ -1,0 +1,12 @@
+tasks:
+  Shortest Path:
+    robotTaskName: Shortest Path
+
+condaConfigFile: conda.yaml
+artifactsDir: output
+PATH:
+  - .
+PYTHONPATH:
+  - .
+ignoreFiles:
+    - .gitignore
