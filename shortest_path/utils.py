@@ -7,7 +7,7 @@ import json
 
 
 # +
-def base64_decode(text):
+def base64_decode_image(text):
     if "base64," in text:
         text = text.split("base64,", 1)[1]
     b = base64.urlsafe_b64decode(text)
@@ -20,10 +20,9 @@ def base64_decode(text):
         img = cv2.add(cv2.merge([a1, a1, a1, a1]), img)  # add up values (with clipping)
         img = cv2.cvtColor(img, cv2.COLOR_RGBA2GRAY)  # strip alpha channel
 
-    return despeckle(img)
+    return img
 
 def ocr(image):
-    image = cv2.resize(image, None, fx=2.0, fy=2.0, interpolation=cv2.INTER_CUBIC)
     return pytesseract.image_to_string(image).strip()
 
 
@@ -38,25 +37,22 @@ def error(candidate, target):
     error = sum(regex.fullmatch(r"(?b)(%s){e}" % candidate, target).fuzzy_counts)
     return float(error) / len(target)
 
-DEMAND = ["Name:", "Shipping Date", "State", "City", "Address 1", "Address 2", 
-             "Zip Code", "Cargo Preference", "Cargo", "Ship Preference"]
-SUPPLY = ["Name:", "State", "City", "Address 1", "Address 2", "Zip Code"]
 
-def match(table):
-    real_names = (DEMAND if len(table) == len(DEMAND) else SUPPLY).copy()
-    nick_names = list(table.keys())
+def match(table, names):
+    names = list(names)
+    values = list(table.keys())
 
     matches = []
-    for nick in nick_names:
-        for real in real_names:
-            matches.append((error(nick, real), real, nick))
+    for value in values:
+        for name in names:
+            matches.append((error(value, name), name, value))
 
-    results = {}    
-    for err, real, nick in sorted(matches):
-        if real in real_names and nick in nick_names:
-            results[real] = table[nick]
-            real_names.remove(real)
-            nick_names.remove(nick)
+    results = {}
+    for err, name, value in sorted(matches):
+        if name in names and value in values:
+            results[name] = table[value]
+            names.remove(name)
+            values.remove(value)
 
     return results
 
@@ -95,7 +91,7 @@ def floodfill(image, x, y, min_size, area=None):
 
     return area
 
-def despeckle(img, min_size=5, threshold=164):
+def despeckle_image(img, min_size=5, threshold=164):
     h, w = img.shape
 
     # binarization with threshold of 164
@@ -112,6 +108,11 @@ def despeckle(img, min_size=5, threshold=164):
             floodfill(img, x, y, min_size)
 
     return img
+
+def resize_image(image, scale):
+    scale = float(scale)
+    return cv2.resize(image, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
+
 # -
 
 

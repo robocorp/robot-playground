@@ -1,3 +1,4 @@
+# +
 *** Settings ***
 Library  RPA.Browser
 Library  utils.py
@@ -5,7 +6,22 @@ Library  Collections
 Library  RPA.core.notebook
 Suite Teardown  Close All Browsers
 
+*** Variables ***
+@{DEMAND_FIELDS}  Name:  Shipping Date  State  City  Address 1  Address 2  
+...               Zip Code  Cargo Preference  Cargo  Ship Preference
+@{SUPPLY_FIELDS}  Name:  State  City  Address 1  Address 2  Zip Code
+
+
+# +
 *** Keyword ***
+Convert Base64 Image To Text
+    [Arguments]  ${src}
+    ${image}=  Base64 Decode Image  ${src}
+    ${image}=  Despeckle Image  ${image}
+    ${image}=  Resize Image  ${image}  2.0
+    ${text}=  OCR  ${image}
+    [Return]  ${text}
+
 Read Demand Table
     ${table}=  Create Dictionary
     ${name}=  Get Text  xpath://tbody[@id="demand_tbody"]/tr[1]/td[1]
@@ -14,15 +30,15 @@ Read Demand Table
 
     FOR    ${INDEX}    IN RANGE    2    11
         ${src}=  Get Element Attribute  xpath://tbody[@id="demand_tbody"]/tr[${INDEX}]/td[1]/img  src
-        ${image}=  Base64 Decode  ${src}
-        ${name}=  OCR  ${image}
+        ${name}=  Convert Base64 Image To Text  ${src}
         ${value}=  Get Text  xpath://tbody[@id="demand_tbody"]/tr[${INDEX}]/td[2]
         Set To Dictionary  ${table}  ${name}=${value}
     END
 
+    ${table}=  Match  ${table}  ${DEMAND_FIELDS}
+
     [Return]  ${table}
 
-*** Keyword ***
 Read Supply Table
     ${table}=  Create Dictionary
     ${name}=  Get Text  xpath://tbody[@id="supply_tbody"]/tr[1]/td[1]
@@ -31,21 +47,21 @@ Read Supply Table
 
     FOR    ${INDEX}    IN RANGE    2    7
         ${src}=  Get Element Attribute  xpath://tbody[@id="supply_tbody"]/tr[${INDEX}]/td[1]/img  src
-        ${image}=  Base64 Decode  ${src}
-        ${name}=  OCR  ${image}
+        ${name}=  Convert Base64 Image To Text  ${src}
         ${value}=  Get Text  xpath://tbody[@id="supply_tbody"]/tr[${INDEX}]/td[2]
         Set To Dictionary  ${table}  ${name}=${value}
     END
+
+    ${table}=  Match  ${table}  ${SUPPLY_FIELDS}
   
     [Return]  ${table}
+# -
 
 *** Keyword ***
 Copy Paste Data
     [Arguments]  ${screen_shot}
     ${supply}=  Read Supply Table
     ${demand}=  Read Demand Table
-    ${supply}=  Match  ${supply}
-    ${demand}=  Match  ${demand}
     
     Input Text  //div[span[text()='Cargo Description']]/textarea  ${demand}[Cargo]
     Input Text  //div[span[text()='Ship Date']]/input  ${demand}[Shipping Date]
