@@ -17,7 +17,7 @@ Suite Teardown  Close All Browsers
 Convert Base64 Image To Text
     [Arguments]  ${src}
     ${image}=  Base64 Decode Image  ${src}
-    ${image}=  Despeckle Image  ${image}
+    ${image}=  Remove Noise From Image  ${image}
     ${image}=  Resize Image  ${image}  2.0
     ${text}=  OCR  ${image}
     [Return]  ${text}

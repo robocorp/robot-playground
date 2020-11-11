@@ -91,7 +91,7 @@ def floodfill(image, x, y, min_size, area=None):
 
     return area
 
-def despeckle_image(img, min_size=5, threshold=164):
+def remove_noise_from_image(img, min_size=5, threshold=164):
     h, w = img.shape
 
     # binarization with threshold of 164
